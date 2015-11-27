@@ -1,0 +1,37 @@
+在dockerfile中。
+RUN后面跟可执行的操作,只用在build生成images的时候才会执行。
+RUN command默认是调用/bin/sh -c命令环境。
+如果想用不同的shell环境执行命令。可以用
+RUN ['command','pram1','pram2']
+
+CMD和ENTRYPOINT默认只能在dockerfile创建的容器中运行一次。
+而且必须写在RUN命令的后面。
+
+CMD 一般后面跟运行程序启动的命令，
+CMD ['command','pram1','pram2']
+一般在docker启动的时候就可以读取到该条命令，来启动相应的服务。
+docker run -d -t -i --name container_name images 
+
+但是如果在启动容器的时候执行其他的命令，就会将dockerfile中的CMD命令
+给忽略掉。如:
+docker run -d -t -i --name container_name images /bin/echo "hehe".
+就会执行/bin/echo "hehe".输出hehe。
+而不会去执行docker中的CMD命令。
+
+ENTRYPOINT命令翻译过来就是"入口点",就是一般会讲程序的执行命令和必要的参数
+写在里面，当启动docker的时候，默认会执行ENTRYPOINT后面的命令和参数，也可以在
+dockerfile运行的时候在后面添加参数。也会被ENTRYPOINT识别的。
+ENTRYPOINT ['command','pram1','pram2'] 
+这个ENTRYPOINT可以用来执行特定的命令。将执行的特定命令和参数写好，
+后面在dockerfile启动的时候可以添加后面的参数。
+
+例如我们现在有个dockerfile在后面添加
+ENTRYPOINT ["/bin/echo","hehe"]
+在启动容器的时候，我们在后面添加参数 /bin/echo da
+docker run -d -t -i --name container_name images /bin/echo da
+就会输出 hehe /bin/echo da
+
+而里面写着CMD命令，就只会输出
+da
+因为/bin/echo da会将里面的CMD命令给忽略掉。
+
