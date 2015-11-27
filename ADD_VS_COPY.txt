@@ -1,0 +1,8 @@
+ADD和COPY都有将宿主机的文件或目录复制到docker container中。
+首先有个条件，在复制的过程中，所有宿主机本地需要复制进container中
+的文件都必须放在docker build的目录中。
+ADD比COPY牛逼；
+COPY一般只能够将文件或者目录复制到container中。
+ADD不但可以将普通的文件或者目录复制到container中，
+还可以对压缩文件包*.tar.gz或者其他格式的压缩包，并且在复制到container中，还会将该压缩包解压。
+还可以添加URL，对URL文件进行下载，并将下载的压缩包解压到container中。
