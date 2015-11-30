@@ -1,0 +1,45 @@
+在docker中，当一个容器启动的时候，
+如果该容器在后台运行的话，我们如果想进入该容器进行操作。
+有下面几种方法。
+
+1.利用docker attach
+docker attach有个缺点。就是假如我们利用ssh连接docker主机
+的时候，如果多个终端都利用attach进入容器的话，就会进入操作同步的状态。
+出现的状态，就是在一个容器操作，其他容器也会进行同步操作。
+这种方式的缺陷就是，我们不需要一个终端输入输出，其他终端也跟着打印相同的内容。‘
+而且如果退出的话，container也会随之exited。
+
+
+2.就是我们在里面安装sshd服务，利用宿主机分配的内网ip地址进行连接。
+获取container里面的ip地址
+docker inspect --format '{{.NetworkSettings.IPAddress}}' container_name/container_id
+ssh root@container_ip 进行连接。
+但这种方式违背docker所倡导的一个容器一个进程的原则，
+从另外一个角度讲，这种方式更利于管理container。
+
+
+3,利用自带命令docker exec
+docker exec相对来说比较常用一点，这种方式不会由于exec的退出而导致整个container的退出。
+可以替代ssh或者nsenter、nsinit方式，在容器内进行操作。
+若现在后台有一个run的container。通过
+docker exec -i -t container_name /bin/bash就可以进入容器。
+
+
+4，利用第三方工具nsenter
+nsenter的安装，在kernel.org官网上下载linux-utils工具。
+https://www.kernel.org/pub/linux/utils/util-linux/选择最新或者稳定版本下载。
+wget -c https://www.kernel.org/pub/linux/utils/util-linux/v2.27/util-linux-2.27.tar.gz 
+解压后./configure 和make 之后，就生成了可运行的命令。
+注意千万不要进行make install。因为在make的时候生成了好多系统级命令，会导致系统出错。
+将make生成的命令copy到系统可执行的目录下。
+tar -xvf util-linux-2.27.tar.gz
+./configure --without-ncurses 
+make 
+cp nsenter /usr/local/bin/
+
+nsenter进入container的命令格式为：
+nsenter --target container_pid --uts --ipc --pid --net
+container_pid获取方式：
+docker inspect --format '{{.State.Pid}}' container_name/container_id
+
+
