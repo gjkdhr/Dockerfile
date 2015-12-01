@@ -1,0 +1,107 @@
+搭建docker私有仓库
+
+docker官方提供registry仓库image，但是只能当作本机的images进行上传。
+其他主机上传需要CA认证。
+在折腾CA的过程中发现各种bug，需要创建nginx反向代理，还要创建CA认证。
+所以最后的策略是：
+在本机创建registry私有仓库。对本机的images进行push和pull，
+对于其他主机，先将images进行export，然后通过ssh发送当前主机，在导入images
+到docker，然后进行本地push。
+
+先push一个registry，然后启动
+docker pull registry:latest
+启动的话，docker registry默认的端口是5000，并且将image存储在运行的registry_container的
+/tmp/registry/目录下,所以我们要将其存储的image映射到本地目录，
+防止钙container因关闭或删除而使保存在其中的images丢失。
+创建映射到本地的directory，并启动一个container
+mkdir -pv /home/user/registry
+docker run -d -t -i --name registry --volume /home/user/registry:/tmp/registry -p 5000:5000 registry:latest
+
+
+假设我们上传一个比较小的image busybox,我们先从docker hub上pull一个。
+[root@test1 registry]# docker pull busybox:latest
+latest: Pulling from busybox
+d1592a710ac3: Pull complete 
+17583c7dd0da: Pull complete 
+Digest: sha256:eb3c0d4680f9213ee5f348ea6d39489a1f85a318a2ae09e012c426f78252a6d2
+Status: Downloaded newer image for busybox:latest
+
+要上传的话，就得对image标签进行修改，将其REPOSITORY 修改为本地。
+docker tag busybox:latest 127.0.0.1:5000/busybox:latest
+
+然后就可以进行上传/
+[root@test1 ~]# docker push 127.0.0.1:5000/busybox:latest
+The push refers to a repository [127.0.0.1:5000/busybox] (len: 1)
+Sending image list
+Pushing repository 127.0.0.1:5000/busybox (1 tags)
+d1592a710ac3: Image successfully pushed 
+17583c7dd0da: Image successfully pushed 
+
+现在我们上传一个centos:6.7的images制作的centos:httpd的images到registry
+[root@test1 registry]# docker push 127.0.0.1:5000/centos:httpd
+The push refers to a repository [127.0.0.1:5000/gjkdhr/centos] (len: 1)
+Sending image list
+Pushing repository 127.0.0.1:5000/gjkdhr/centos (1 tags)
+Image 47d44cb6f252 already pushed, skipping
+5fc6f5013018: Image successfully pushed 
+8e6730e0eaef: Image successfully pushed 
+b89573a5b116: Image successfully pushed 
+3fba1048142f: Image successfully pushed 
+2bb3ef4c4830: Image successfully pushed 
+7e78c21d2f72: Image successfully pushed 
+756372c2871d: Image successfully pushed 
+acdc54ca11e5: Image successfully pushed 
+58a0909ea4d2: Image successfully pushed 
+01c4f9bcf5c7: Image successfully pushed 
+a7afebb58b32: Image successfully pushed 
+63623a832c43: Image successfully pushed 
+1753d5ca0bdc: Image successfully pushed 
+92076b7deb52: Image successfully pushed 
+7a7b5db090e7: Image successfully pushed 
+60ba6829d84e: Image successfully pushed 
+764cc87e466d: Image successfully pushed 
+c1ab4ad86010: Image successfully pushed 
+d049f54cb5c8: Image successfully pushed 
+2c3aeb86b048: Image successfully pushed 
+Pushing tag for rev [2c3aeb86b048] on {http://127.0.0.1:5000/v1/repositories/gjkdhr/centos/tags/httpd}
+
+
+现在我们上传一个cento:6.7的images到registry
+[root@test1 registry]# docker push  127.0.0.1:5000/centos:6.7
+The push refers to a repository [127.0.0.1:5000/centos] (len: 1)
+Sending image list
+Pushing repository 127.0.0.1:5000/centos (1 tags)
+Image b89573a5b116 already pushed, skipping
+Image 3fba1048142f already pushed, skipping
+Image 8e6730e0eaef already pushed, skipping
+Image 5fc6f5013018 already pushed, skipping
+Image 47d44cb6f252 already pushed, skipping
+Pushing tag for rev [3fba1048142f] on {http://127.0.0.1:5000/v1/repositories/centos/tags/6.7}
+发现跳过了好多，迅速就push上去了。
+
+这是由于docker images centos:httpd 是基于centos:6.7 image制作的。
+在push docker push 127.0.0.1:5000/centos:httpd的时候，已经将centos:6.7上传了。
+又因为docker images基于分层创建的原理。
+所以images可以迅速上传。
+
+要想查看上传的所有images，都在/home/user/registry/目录下。
+这是因为在上传时，我们已经将running registry_container里面保存images的目录
+/tmp/registry目录映射到本地的/home/user/registry/下
+下面的images目录中保存着上传images的每一个分层id对应的date，相同的分层只保留了一份。
+[root@test1 registry]# ls images/
+01c4f9bcf5c755f5ee2690a8acaf6d0b84afc8ddce4e9052a1ac477deb91a179 
+07f59d73bc78bfdcedb825bc1e5d79926c642da4d08a72798a3019e914528ffe  
+0d0605df7ec7bc37c9efbf8afbb061bfbbb16b756279f0ed0c7319f9b7bc59dc 
+
+下面的repositories/保存着images的名字。
+[root@test1 registry]# ls /home/user/registry/repositories/library/
+busybox  centos  centos6  sshd
+
+也可以通过http来查看,因为映射到本地的5000端口
+curl http://127.0.0.1:5000，每对花括号代表一个images
+{"num_results": 4, "query": "", "results": [{"description": "", "name": "library/sshd"}, 
+{"description": "", "name": "library/busybox"}, {"description": "", "name": "library/centos6"},
+ {"description": "", "name": "gjkdhr/centos"}]}
+
+以后就可以本地pull images了。
+docker pull 127.0.0.1:5000/busybox
