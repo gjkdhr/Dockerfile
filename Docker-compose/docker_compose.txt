@@ -1,0 +1,17 @@
+在centos上安装docker-compose
+在github上下载docker-compose脚本，并赋予执行权限。
+curl -L https://github.com/docker/compose/releases/download/1.1.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+
+确认是否安装成功。
+docker-compose -version
+
+docker-compose官网文档，涉及安装，运行，以及命令行参数，docker-compose.yml 文件。
+https://docs.docker.com/compose/
+
+创建好docker-compose.yml，生成container
+docker-compose -f docker-compose.yml -d
+
+docker-compose的更多命令参数已经在help命令中显示。
+yml文件里的参数选项，可以在官网文档中查找。
+
