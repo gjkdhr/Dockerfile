@@ -1,0 +1,15 @@
+mysqld:
+        image: "gjkdhr/centos:mysqld"
+        ports:
+                - "3306:3306"
+        volumes:
+                - "/mnt/data/mysql:/var/lib/mysql"
+        hostname: "container_mysql.zbit.com"
+
+httpd:
+        image: "gjkdhr/centos:httpd"
+        ports:
+                - "80:80"
+        volumes:
+                - "/mnt/web_root:/app"
+        hostname: "web_server.zbit.com"
