@@ -1,9 +1,7 @@
 mysqld:
         image: "gjkdhr/centos:mysqld"
         ports:
-                - "3306:3306"
-        volumes:
-                - "/mnt/data/mysql:/var/lib/mysql"
+                - "32768:3306"
         hostname: "container_mysql.zbit.com"
 
 httpd:
@@ -12,4 +10,4 @@ httpd:
                 - "80:80"
         volumes:
                 - "/mnt/web_root:/app"
-        hostname: "web_server.zbit.com"
+        hostname: "container_server.zbit.com"
