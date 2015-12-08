@@ -21,17 +21,18 @@ docker inspect mysqld/container_id|grep -i ipaddress
 可根据实际情况进行授权。
 当container成功启动后，
 本地用户启动；
-mysql -uroot -predhat -e "GRANT ALL PRIVILEGES ON testdb.* TO 'testdb'@'localhost' IDENTIFIED BY 'testdbadmin';FLUSH PRIVILEGES;"
+mysql -uroot -predhat -e "GRANT ALL PRIVILEGES ON testdb.* TO 'testdb'@'%' IDENTIFIED BY 'testdbadmin'; FLUSH PRIVILEGES;"
 mysql -u testdb  -h 172.17.0.X  -ptestdbadmin
 172.17.0.x是该容器的ip地址。
 上面的授权是关于localhost的,只能对testdb数据库进行操作。
-
-
-mysql -uroot -predhat -e "GRANT ALL PRIVILEGES ON testdb.* TO 'testdb'@'%' IDENTIFIED BY 'testdbadmin'; FLUSH PRIVILEGES;"
-mysql -u 
+在其他远程机上登录
+mysql -u testdb -h 10.100.62.120 -P 32768 -p
 
 
 mysql -uroot -predhat -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'dbadmin';FLUSH PRIVILEGES;"
+主机登录
+mysql -u root -h 172.17.0.X -pdbadmin
+
 其他主机可以连接到的。
 在创建container的时候，系统会自动分配端口映射到container里面的3306端口。
 这样其他主机可以通过该主机的ip地址+端口来访问container里面的mysqld服务器。
