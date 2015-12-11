@@ -27,7 +27,6 @@ RUN rm -rf /var/www/html
 RUN ln -sv /app /var/www/html
 COPY ./sample/ /app
 
-
 #set apache variables. use -e options it the start of the container
 ENV APACHE_RUN_USER www-data
 ENV APACHE_RUN_GROUP www-data
