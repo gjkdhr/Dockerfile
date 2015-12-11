@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM gjkdhr/ubuntu:sshd
 MAINTAINER gjkdhr gjkdhr@163.com
 
 #install the nginx server
@@ -37,6 +37,7 @@ RUN ln -sv /usr/share/nginx/html /app
 ADD ./sample/ /app
 
 #open the port
+EXPOSE 22
 EXPOSE 80
 EXPOSE 443
 
