@@ -1,0 +1,52 @@
+1,download the package.
+	offical: http://openvswitch.org
+
+2,As the root user let’s install some packages and add a new user.
+yum -y install wget openssl-devel gcc make python-devel openssl-devel
+kernel-devel graphviz kernel-debug-devel autoconf automake rpm-build
+redhat-rpm-config libtool
+
+adduser openvswitch
+passwd openvswitch 
+
+su - openvswitch
+
+3,Now as the ovs user we’ll generate the rpm file.
+In this post I’m skipping the rpmbuild tests included with
+openvswitch as I’m solving some dependency problems.
+
+mkdir -p ~/rpmbuild/SOURCES
+cp openvswitch-2.3.2.tar.gz ~/rpmbuild/SOURCES/
+tar xfz openvswitch-2.3.2.tar.gz
+
+sed 's/openvswitch-kmod, //g' openvswitch-2.3.2/rhel/openvswitch.spec > openvswitch-2.3.2/rhel/openvswitch_no_kmod.spec
+
+rpmbuild -bb --nocheck openvswitch-2.3.2/rhel/openvswitch_no_kmod.spec
+
+
+4,We’ll create the /etc/openvswitch configuration directory:
+mkdir /etc/openvswitch
+
+5,Let’s install the rpm package:
+yum localinstall /home/ovs/rpmbuild/RPMS/x86_64/openvswitch-2.3.2-1.x86_64.rpm
+
+
+Notice:If you’re using SELinux in enfocing mode let’s change some contexts:
+
+yum install policycoreutils-python 
+
+semanage fcontext -a -t openvswitch_rw_t "/etc/openvswitch(/.*)?" 
+restorecon -Rv /etc/openvswitch
+
+Start the openvswitch service:
+systemctl start openvswitch
+
+If you want the openvswitch service to start at boot time:
+chkconfig openvswitch on
+
+Let’s check that the command-line tools are ready:
+ovs-vsctl -V
+ovs-vsctl (Open vSwitch) 2.3.2
+Compiled Jun 28 2015 13:01:11
+DB Schema 7.6.2
+
