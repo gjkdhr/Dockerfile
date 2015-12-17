@@ -1,0 +1,64 @@
+Firewalld 提供了支持网络/防火墙区域(zone)定义网络链接
+以及接口安全等级的动态防火墙管理工具。
+它支持 IPv4, IPv6 防火墙设置以及以太网桥接，并且拥有运行时配置和永久配置选项。
+它也支持允许服务或者应用程序直接添加防火墙规则的接口。
+
+安装centos7的时候默认会安装firewall.
+
+静态防火墙(system-config-firewall/lokkit)使用 system-config-firewall 和 
+lokkit 的静态防火墙模型实际上仍然可用并将继续提供，
+但却不能与“守护进程”同时使用。用户或者管理员可以决定使用哪一种方案。。
+
+如果我们当前不习惯使用firewall的管理，可以安装centos6上的iptables-services服务来代替。
+[root@centos7 ~]# yum install iptables-services
+然后停掉系统自带的firewall
+[root@centos7 ~]# systemctl stop firewall.service
+
+最后屏蔽掉,屏蔽掉后按tab键就不会出现该服务了。只能通过unmask将该服务解禁。
+[root@centos7 ~]# systemctl mask firewalld.service 
+Created symlink from /etc/systemd/system/firewalld.service to /dev/null.
+
+通过安装包文件，我们可以发现当前系统中存在着ipv4,和ipv6两种火墙服务。
+[root@centos7 ~]# rpm -ql iptables-services
+/etc/sysconfig/ip6tables
+/etc/sysconfig/iptables
+/usr/lib/systemd/system/ip6tables.service
+/usr/lib/systemd/system/iptables.service
+将这两个服务启动
+[root@centos7 ~]# systemctl start iptables.service 
+[root@centos7 ~]# iptables -nL
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0            state RELATED,ESTABLISHED
+ACCEPT     icmp --  0.0.0.0/0            0.0.0.0/0           
+ACCEPT     all  --  0.0.0.0/0            0.0.0.0/0           
+ACCEPT     tcp  --  0.0.0.0/0            0.0.0.0/0            state NEW tcp dpt:22
+REJECT     all  --  0.0.0.0/0            0.0.0.0/0            reject-with icmp-host-prohibited
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+REJECT     all  --  0.0.0.0/0            0.0.0.0/0            reject-with icmp-host-prohibited
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination 
+
+一般我们是将火墙给关闭掉的。
+[root@centos7 ~]# iptables -F
+[root@centos7 ~]# iptables -nL
+Chain INPUT (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination         
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination   
+然后重启保存。如果不想火墙开机自启动的话。直接就disable
+[root@centos7 ~]# service iptables save
+iptables: Saving firewall rules to /etc/sysconfig/iptables:[  确定  ]
+[root@centos7 ~]# systemctl enable iptables.service 
+Created symlink from /etc/systemd/system/basic.target.wants/iptables.service to /usr/lib/systemd/system/iptables.service.
+
+当然有时候我们为火墙配置了特定的策略，在重启保存iptables策略后，
+还需要设置为开机自启。
+
