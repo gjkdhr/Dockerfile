@@ -1,0 +1,11 @@
+由于docker官方的镜像都是托管在aws上云主机。
+在下载镜像的时候，耗费大量的时间，所以我们选择国内的
+daocloud，daocloud托管了所有hub.docker.com里的所有镜像。
+
+在镜像搜索里找到你想要的镜像，
+打开链接会自动连接到github上该项目的dockerfile项目中。
+利用git clone将整个项目下载下来。
+然后利用docker build --tag="image_name" .
+来创建镜像。
+
+你甚至可以看见该镜像是怎样一步步建立的。
