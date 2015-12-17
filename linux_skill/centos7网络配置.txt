@@ -1,0 +1,39 @@
+在vmvare上centos7在安装完成后，需要配置网路；
+修改配置文件，/etc/sysconfig/network-scripts/ifcfg-eno16777736文件。
+将vmvare的dhcp等相关服务开启。
+并设置开机启动noboot=yes
+[root@centos7 ~]# grep -i boot /etc/sysconfig/network-scripts/ifcfg-eno16777736 
+BOOTPROTO=dhcp
+ONBOOT=yes
+
+重新启动网络
+service network restart
+
+先自动获取ip地址，然后将地址修改为静态。
+比如ip地址为：192.168.253.132
+
+在ifcfg-eno16777736里修改dhcp为static，
+然后在后面添加，ip地址，网关，子网掩码，dns。
+IPADDR0=192.168.253.132
+NETMASK0=255.255.255.0
+GATEWAY0=192.168.253.2
+DNS1=192.168.253.2
+
+如果要修改主机名的话，在/etc/hostname中定义新的主机名。
+[root@centos7 ~]# cat /etc/hostname 
+centos7.zbit.com
+
+在最小化安装完centos7之后，发现没有ifconfig命令，
+我们通过ip addr来查看ip地址。
+将网络配置文件的onboot修改为yes
+然后重新启动网络
+service restart network
+再次查看ip。
+
+
+如果要用ifconfig命令来查看ip,安装net-tools包就可以了。
+[root@centos ~]# which ifconfig
+/usr/sbin/ifconfig
+[root@centos ~]# rpm -qf /usr/sbin/ifconfig 
+net-tools-2.0-0.17.20131004git.el7.x86_64
+[root@centos ~]# yum install net-tools -y 
