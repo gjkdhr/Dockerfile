@@ -1,0 +1,88 @@
+Systemd是一个Linux操作系统下的系统和服务管理器。
+它兼容centos6的service。保留了 Linux cgroups 的进程追踪功能.
+为了向后兼容，旧的service命令在CentOS 7中仍然可用，
+它会重定向所有命令到新的systemctl工具。
+
+使用systemctl来启动/停止/重启服务
+例如安装了一个httpd服务。
+yum install httpd -y
+ 
+使用systemctl来启动服务。当服务启动成功后，没有任何提示。
+通过查看状态，可以发现已经是running的状态
+另外，CGroup可以查看当前服务状态是通过那个命令开启服务的。
+systemctl start httpd.service
+[root@centos7 ~]# systemctl status httpd.service 
+● httpd.service - The Apache HTTP Server
+   Loaded: loaded (/usr/lib/systemd/system/httpd.service; disabled; vendor preset: disabled)
+   Active: active (running) since 二 2015-12-15 18:29:20 CST; 3min 0s ago
+  Docs: man:httpd(8)
+           man:apachectl(8)
+  Process: 5487 ExecStop=/bin/kill -WINCH ${MAINPID} (code=exited, status=0/SUCCESS)
+ Main PID: 5536 (httpd)
+   Status: "Processing requests..."
+   CGroup: /system.slice/httpd.service
+           ├─5536 /usr/sbin/httpd -DFOREGROUND
+           ├─5537 /usr/sbin/httpd -DFOREGROUND
+
+
+如果要停掉一个服务。利用stop即可，成功后没有任何提示。
+systemctl stop httpd.service
+
+
+重启当然也一样。
+systemctl restart httpd.service 
+
+也可以使用try_restart，它只会在服务已经运行的时候重启。
+同时也可以用reload，一般在修改完配置文件的时候，可以重启服务。
+systemctl try-restart httpd.service
+systemctl reload httpd.service
+
+要检查服务的状态，可以用status选项
+systemctl status httpd
+[root@centos7 ~]# systemctl status httpd.service 
+● httpd.service - The Apache HTTP Server
+   Loaded: loaded (/usr/lib/systemd/system/httpd.service; disabled; vendor preset: disabled)
+   Active: inactive (dead)
+     Docs: man:httpd(8)
+           man:apachectl(8)
+
+12月 15 18:24:02 centos7.zbit.com systemd[1]: Starting The Apache HTTP Server...
+12月 15 18:24:21 centos7.zbit.com httpd[4301]: AH00557: httpd: apr_sockaddr_info_get() failed for centos7.zbit.com
+12月 15 18:24:21 centos7.zbit.com httpd[4301]: AH00558: httpd: Could not reliably determine the server's fully qualified domain name, usin... message
+12月 15 18:24:29 centos7.zbit.com systemd[1]: Started The Apache HTTP Server.
+12月 15 18:25:07 centos7.zbit.com systemd[1]: Stopping The Apache HTTP Server...
+12月 15 18:25:08 centos7.zbit.com systemd[1]: Stopped The Apache HTTP Server.
+Hint: Some lines were ellipsized, use -l to show in full.
+
+httpd.service 显示服务的名称
+Loaded 显示载入启动服务的脚本文件存放的位置。
+Active:表示当前服务的状态，由于未开启，显示dead，
+
+
+也可以通过systemctl来控制服务是否开机启动。
+systemctl enable httpd.service
+systemctl disable httpd.service
+
+enable其实是创建了一个软链接，将httpd.service启动的脚本/usr/lib/systemd/system/httpd.service
+做一个软链接，链接到/etc/systemd/system/multi-user.target.wants/目录下。
+
+[root@centos7 ~]# systemctl enable httpd.service 
+Created symlink from /etc/systemd/system/multi-user.target.wants/
+httpd.service to /usr/lib/systemd/system/httpd.service.
+
+在/etc/systemd/system/multi-user.target.wants/目录下，存在着所有开机启动服务的链接。
+[root@centos7 ~]# ls /etc/systemd/system/multi-user.target.wants/
+abrt-ccpp.service    atd.service           cups.service        kdump.service
+abrtd.service        auditd.service        httpd.service       ksm.service    
+
+disable同理，相当于将/etc/systemd/system/multi-user.target.wants/下的服务链接给删除掉了
+[root@centos7 ~]# systemctl disable httpd.service 
+Removed symlink /etc/systemd/system/multi-user.target.wants/httpd.service.
+[root@centos7 ~]# ls /etc/systemd/system/multi-user.target.wants/
+abrt-ccpp.service    atd.service           cups.service        kdump.service
+abrtd.service        auditd.service        ksm.service    
+
+如果要查看当前服务是否是开机自启动
+[root@centos7 ~]# systemctl list-unit-files|grep httpd
+httpd.service                               disabled
+
