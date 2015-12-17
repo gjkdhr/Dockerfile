@@ -1,0 +1,12 @@
+安装wget下载工具:
+	yum install wget -y
+先备份原来的repo：
+	mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+访问链接：
+	http://mirrors.163.com/.help/centos.html
+下载到指定位置：
+	wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.163.com/.help/CentOS7-Base-163.repo
+
+创建缓存：
+	yum clean all
+	yum makecache
