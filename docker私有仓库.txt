@@ -1,22 +1,24 @@
 搭建docker私有仓库
 
-docker官方提供registry仓库image，但是只能当作本机的images进行上传。
+docker官方提供registry仓库image，但是只能当作本机的images进行上传和下载。
 其他主机上传需要CA认证。
-在折腾CA的过程中发现各种bug，需要创建nginx反向代理，还要创建CA认证。
+在折腾CA的过程中出现各种问题，需要创建nginx反向代理，还要创建CA认证。
 所以最后的策略是：
 在本机创建registry私有仓库。对本机的images进行push和pull，
-对于其他主机，先将images进行export，然后通过ssh发送当前主机，在导入images
+对于其他主机，先将images进行export，然后通过ssh发送当前主机，再导入images
 到docker，然后进行本地push。
 
 先push一个registry，然后启动
 docker pull registry:latest
 启动的话，docker registry默认的端口是5000，并且将image存储在运行的registry_container的
 /tmp/registry/目录下,所以我们要将其存储的image映射到本地目录，
-防止钙container因关闭或删除而使保存在其中的images丢失。
+防止该container因关闭或删除而使保存在其中的images丢失。
 创建映射到本地的directory，并启动一个container
 mkdir -pv /home/user/registry
 docker run -d -t -i --name registry --volume /home/user/registry:/tmp/registry -p 5000:5000 registry:latest
-
+我们可以访问5000端口，进行测试。
+[root@kubernetes]# curl http://192.168.253.132:5000
+"\"docker-registry server\""[root@kubernetes]# 
 
 假设我们上传一个比较小的image busybox,我们先从docker hub上pull一个。
 [root@test1 registry]# docker pull busybox:latest
@@ -28,6 +30,8 @@ Status: Downloaded newer image for busybox:latest
 
 要上传的话，就得对image标签进行修改，将其REPOSITORY 修改为本地。
 docker tag busybox:latest 127.0.0.1:5000/busybox:latest
+也可以将标签换为主机的ip地址。
+docker tag busybox:latest host_ip:5000/busybox:latest
 
 然后就可以进行上传/
 [root@test1 ~]# docker push 127.0.0.1:5000/busybox:latest
@@ -50,14 +54,6 @@ b89573a5b116: Image successfully pushed
 2bb3ef4c4830: Image successfully pushed 
 7e78c21d2f72: Image successfully pushed 
 756372c2871d: Image successfully pushed 
-acdc54ca11e5: Image successfully pushed 
-58a0909ea4d2: Image successfully pushed 
-01c4f9bcf5c7: Image successfully pushed 
-a7afebb58b32: Image successfully pushed 
-63623a832c43: Image successfully pushed 
-1753d5ca0bdc: Image successfully pushed 
-92076b7deb52: Image successfully pushed 
-7a7b5db090e7: Image successfully pushed 
 60ba6829d84e: Image successfully pushed 
 764cc87e466d: Image successfully pushed 
 c1ab4ad86010: Image successfully pushed 
@@ -105,3 +101,12 @@ curl http://127.0.0.1:5000，每对花括号代表一个images
 
 以后就可以本地pull images了。
 docker pull 127.0.0.1:5000/busybox
+
+在centos7上进行的时候，通过yum install docker docker-selinux安装之后。
+rpm -qc docker
+修改docker的配置文件
+vi /etc/sysconfig/docker
+将里面的options参数进行修改
+OPTIONS='--selinux-enabled --insecure-registry 192.168.253.132:5000'
+然后重启docker。并重新开启registry仓库
+
