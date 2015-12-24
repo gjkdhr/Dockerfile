@@ -1,0 +1,3 @@
+http://www.infoq.com/cn/articles/centos7-practical-kubernetes-deployment
+
+关闭防火墙，selinux。还有NetworkManager服务。
